@@ -1,0 +1,68 @@
+#include "kernel/types.h"
+#include "kernel/stat.h"
+#include "user/user.h"
+#include "Kernel/param.h"
+// MAXARG = 32
+
+void execute(int argc, char * argv[])
+{
+    printf("in execute\n");
+    int pid;
+    int * status = 0;
+    for (int i = 0; i < argc; i++) {
+        /*printf("argc: %d, argv[%d]: %s\n", argc, argv[i]);*/
+    }
+    if ((pid = fork()) == 0) {
+        //child process
+        exec(argv[0], argv);
+    }
+    wait(status);
+    if (status != 0) {
+        fprintf(2, "Error: exec failed");
+    }
+    exit(0);
+}
+
+int main(int argc, char * argv[])
+{
+    int i;
+    int in;
+    int sub_argc = 0;
+    char * p = argv[0];
+    char * sub_argv[16];
+
+    /*printf("0\n");*/
+    // copy argv to sub_argv
+    for (i = 0; i < argc; i++) {
+        memmove(sub_argv[i], argv[i], 16);
+        /*printf("%s\n", argv[i]);*/
+        sub_argc++;
+        p = sub_argv[i+1];
+    }
+    /*printf("1\n");*/
+
+    while (1) {
+        in = read(0, p, 1);
+        if (*p == '\n') {
+            /*printf("2\n");*/
+            /*printf("sub_argc: %d, sub_argv: %s\n", sub_argc, sub_argv[0]);*/
+            execute(sub_argc, sub_argv);
+            exit(0);
+            /*printf("2in\n");*/
+            // clear sub_argv
+            p = sub_argv[argc];
+            sub_argc = argc;
+        }
+        if (*p++ == ' ') {
+            /*printf("3\n");*/
+            argc++;
+            continue;
+        }
+        if (in == 0) {
+            /*printf("4\n");*/
+            execute(sub_argc, sub_argv);
+            break;
+        }
+    }
+    exit(0);
+}
