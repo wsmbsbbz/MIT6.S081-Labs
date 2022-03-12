@@ -305,6 +305,8 @@ fork(void)
 
   pid = np->pid;
 
+  np->mask = p->mask;
+
   release(&np->lock);
 
   acquire(&wait_lock);
