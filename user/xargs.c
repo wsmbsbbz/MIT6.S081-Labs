@@ -7,7 +7,6 @@
 
 void execute(char * cmd, char * params[MAXARG])
 {
-    printf("in\n");
     if (fork() == 0) {
         // child process
         exec(cmd, params);
@@ -20,7 +19,7 @@ int main(int argc, char *argv[])
     int cmd_index = argc - 1;
     char buf[MAXBUF];
     char * p_buf = buf;
-    // cmd_params is a pointer which point to a string
+    // cmd_params is an array which contains pointers to string
     char * cmd_params[MAXARG];
     /*char * p = buf;*/
 
@@ -35,19 +34,20 @@ int main(int argc, char *argv[])
     // fill up the exe_list
     while (read(STDIN, p_buf, 1) > 0) {
         if (*p_buf == '\n') {
-            printf("1");
             *p_buf = 0;
             char * arg = (char *) malloc(sizeof(buf));
             strcpy(arg, buf);
             cmd_params[cmd_index] = arg;
-            cmd_index = 0;
+            cmd_index = argc - 1;
             // clear buf and set p to the start of the buf
             memset(buf, 0, MAXBUF);
             p_buf = buf;
             // fork and exec
             execute(cmd, cmd_params);
-            for (int i = 0; i < MAXARG; i++) {
-                memset(cmd_params[i], 0, MAXARG);
+            for (int i = cmd_index; i < MAXARG; i++) {
+                // in case of cmd_params == NULL, will cause usertrap(): unexpected scause
+                if (cmd_params[i])
+                    free(cmd_params[i]);
             }
         } else if (*p_buf == ' ') {
             *p_buf = 0;
