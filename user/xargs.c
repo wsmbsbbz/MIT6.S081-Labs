@@ -38,17 +38,18 @@ int main(int argc, char *argv[])
             char * arg = (char *) malloc(sizeof(buf));
             strcpy(arg, buf);
             cmd_params[cmd_index] = arg;
-            cmd_index = argc - 1;
             // clear buf and set p to the start of the buf
             memset(buf, 0, MAXBUF);
-            p_buf = buf;
             // fork and exec
             execute(cmd, cmd_params);
-            for (int i = cmd_index; i < MAXARG; i++) {
+            // reset the status
+            for (int i = argc - 1; i <= cmd_index; i++) {
                 // in case of cmd_params == NULL, will cause usertrap(): unexpected scause
-                if (cmd_params[i])
+                /*if (cmd_params[i])*/
                     free(cmd_params[i]);
             }
+            cmd_index = argc - 1;
+            p_buf = buf;
         } else if (*p_buf == ' ') {
             *p_buf = 0;
             char * arg = (char *) malloc(sizeof(buf));
