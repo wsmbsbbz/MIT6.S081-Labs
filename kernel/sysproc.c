@@ -81,6 +81,44 @@ int
 sys_pgaccess(void)
 {
   // lab pgtbl: your code here.
+  int checknum;
+  uint64 firstva, mask;
+  // "kbuf" will be copyout to "mask" later.
+  uint64 kbuf = 0;
+  pte_t *pte;
+  pagetable_t pagetable;
+  if (argaddr(0, &firstva) < 0) {
+    return -1;
+  }
+  if (argint(1, &checknum) < 0) {
+    return -1;
+  }
+  if (argaddr(2, &mask) < 0) {
+    return -1;
+  }
+  // I don't know what the appropriate range for "checknum" is.
+  if (checknum > 512)
+    return -1;
+  pagetable = myproc()->pagetable;
+  for (int i = 0; i < checknum; i++) {
+    if((pte = walk(pagetable, firstva, 0)) == 0) {
+      return -1;
+    }
+    if (*pte & PTE_A) {
+      // Be sure to clear PTE_A after checking if it is set. Otherwise, it
+      // won't be possible to determine if the page was accessed since the
+      // last time pgaccess() was called (i.e., the bit will be set forever).
+      *pte = CLEAR_PTE_A(*pte);
+      // set the bitmask
+      kbuf |= 1 << i;
+    }
+    firstva += PGSIZE;
+  }
+  // don't forget to use "&" operator to get the address of kbuf
+  if (copyout(pagetable, mask, (char *) &kbuf, sizeof(kbuf)) < 0) {
+    return -1;
+  }
+
   return 0;
 }
 #endif
