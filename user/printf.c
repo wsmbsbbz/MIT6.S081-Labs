@@ -1,5 +1,6 @@
 #include "kernel/types.h"
 #include "kernel/stat.h"
+#include "kernel/riscv.h"
 #include "user/user.h"
 
 #include <stdarg.h>
@@ -110,4 +111,18 @@ printf(const char *fmt, ...)
 
   va_start(ap, fmt);
   vprintf(1, fmt, ap);
+}
+
+void
+backtrace(void)
+{
+  uint64 fp, pvm_top, r_adr;
+  printf("backtrace:\n");
+  fp = r_fp();
+  pvm_top = PGROUNDUP(fp);
+  while (fp < pvm_top) {
+    r_adr = *(uint64 *)(fp - 8);
+    printf("%p\n", r_adr);
+    fp = *(uint64 *)(fp - 16);
+  }
 }
