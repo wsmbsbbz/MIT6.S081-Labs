@@ -71,8 +71,10 @@ printf(char *fmt, ...)
   if(locking)
     acquire(&pr.lock);
 
-  if (fmt == 0)
+  if (fmt == 0) {
+    backtrace();
     panic("null fmt");
+  }
 
   va_start(ap, fmt);
   for(i = 0; (c = fmt[i] & 0xff) != 0; i++){
@@ -131,4 +133,18 @@ printfinit(void)
 {
   initlock(&pr.lock, "pr");
   pr.locking = 1;
+}
+
+void
+backtrace(void)
+{
+  uint64 fp, pvm_top, r_adr;
+  printf("backtrace:\n");
+  fp = r_fp();
+  pvm_top = PGROUNDUP(fp);
+  while (fp < pvm_top) {
+    r_adr = *(uint64 *)(fp - 8);
+    printf("%p\n", r_adr);
+    fp = *(uint64 *)(fp - 16);
+  }
 }
