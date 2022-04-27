@@ -67,29 +67,10 @@ usertrap(void)
 
     syscall();
   } else if(scause == 13 || scause == 15){ // page fault
-    uint64 va;
-    pte_t *pte;
-    va = r_stval(); // page fault address
-    if ((pte = walk(p->pagetable, va, 0)) == 0)
+    uint64 va = r_stval();
+    if (cow(p->pagetable, va) == 0) {
       p->killed = 1;
-    if ((*pte & PTE_V) == 0)
-      p->killed = 1;
-    if ((*pte & PTE_C) == 0)
-      p->killed = 1;
-
-    // allocate a new page
-    uint64 pa = PTE2PA(*pte), ka;
-    if ((ka = (uint64) kalloc()) == 0)
-      p->killed = 1;
-    else {
-      memmove((char *)pa, (char *)ka, PGSIZE);
-      va = PGROUNDDOWN(va);
-      uint flags = PTE_FLAGS(*pte);
-      uvmunmap(p->pagetable, va, 1, 1);
-      *pte = PA2PTE(ka) | flags | PTE_W;
-      *pte &= ~PTE_C;
     }
-    
   } else if((which_dev = devintr()) != 0){
     // ok
   } else {
