@@ -68,7 +68,10 @@ usertrap(void)
     syscall();
   } else if(scause == 13 || scause == 15){ // page fault
     uint64 va = r_stval();
-    if (cow(p->pagetable, va) == 0) {
+    // if (cow_alloc(p->pagetable, va) == 0) {
+    if (va >= MAXVA || (va <= PGROUNDDOWN(p->trapframe->sp) && va >= PGROUNDDOWN(p->trapframe->sp) - PGSIZE)) {
+      p->killed = 1;
+    } else if (cow_alloc(p->pagetable, va) != 0) {
       p->killed = 1;
     }
   } else if((which_dev = devintr()) != 0){
