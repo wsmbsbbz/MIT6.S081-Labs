@@ -405,7 +405,7 @@ bmap(struct inode *ip, uint bn)
   bn -= NINDIRECT;
 
   if (bn < NINDIRECT * NINDIRECT) {
-    uint internal = bn / NDIRECT;
+    uint internal = bn / NINDIRECT;
 
     // direct block
     if((addr = ip->addrs[NDIRECT+1]) == 0)
