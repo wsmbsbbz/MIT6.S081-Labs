@@ -290,7 +290,7 @@ sys_open(void)
   int fd, omode;
   struct file *f;
   struct inode *ip;
-  int n;
+  int n, symdepth = 0;
 
   if((n = argstr(0, path, MAXPATH)) < 0 || argint(1, &omode) < 0)
     return -1;
@@ -309,6 +309,21 @@ sys_open(void)
       return -1;
     }
     ilock(ip);
+    // My code here:
+    for (; ip->type == T_SYMLINK && (omode & O_NOFOLLOW) == 0; symdepth++) {
+      if (readi(ip, 0, (uint64)path, 0, MAXPATH) != MAXPATH){
+        iunlockput(ip);
+        end_op();
+        return -1;
+      }
+      iunlockput(ip);
+      if((ip = namei(path)) == 0 || symdepth >= 10){
+        end_op();
+        return -1;
+      }
+      ilock(ip);
+    }
+    // My code ends
     if(ip->type == T_DIR && omode != O_RDONLY){
       iunlockput(ip);
       end_op();
@@ -482,5 +497,43 @@ sys_pipe(void)
     fileclose(wf);
     return -1;
   }
+  return 0;
+}
+
+uint64
+sys_symlink(void) {
+  char old[MAXPATH], new[MAXPATH];
+  struct inode *ip;
+
+  if(argstr(0, old, MAXPATH) < 0 || argstr(1, new, MAXPATH) < 0)
+    return -1;
+
+  // if the path 'new' already have a file
+  // if ((dp = namei(new)) != 0) {
+  //   return -1;
+  // }
+
+  // if can't find the parent of the 'new
+  // if ((dp = nameiparent(new, name))) {
+  //   return -1;
+  // }
+
+  begin_op();
+  // ip is locked now
+  if ((ip = create(new, T_SYMLINK, 0, 0)) == 0) {
+    end_op();
+    return -1;
+  }
+
+  // doesn't need to ilock, otherwise will cause deadlock
+  // ilock(ip);
+  if(writei(ip, 0, (uint64)old, 0, sizeof(old)) != sizeof(old)) {
+    iunlockput(ip);
+    end_op();
+    return -1;
+  }
+  iunlockput(ip);
+  end_op();
+
   return 0;
 }

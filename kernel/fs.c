@@ -379,8 +379,6 @@ bmap(struct inode *ip, uint bn)
 {
   uint addr, *a;
   struct buf *bp;
-// TODO: debug
-// printf("bn:%d, MAXFILE:%d\n", bn, MAXFILE);
 
   if(bn < NDIRECT){
     if((addr = ip->addrs[bn]) == 0)
